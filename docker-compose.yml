@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: casino_simulation_db
+    restart: always
+    environment:
+      POSTGRES_USER: casino_user
+      POSTGRES_PASSWORD: casino_pass
+      POSTGRES_DB: casino_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - casino_db_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+
+volumes:
+  casino_db_data:
