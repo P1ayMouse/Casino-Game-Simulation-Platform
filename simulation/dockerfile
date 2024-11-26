@@ -1,0 +1,8 @@
+FROM python:3.9
+
+WORKDIR /app
+
+COPY simulation.py /app
+RUN pip install flask psycopg2-binary requests
+
+CMD ["python", "simulation.py"]

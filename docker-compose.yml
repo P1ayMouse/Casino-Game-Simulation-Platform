@@ -1,7 +1,24 @@
 version: '3.9'
 
 services:
-  postgres:
+  gateway:
+    build: ./gateway
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./uploaded_files:/uploaded_files
+    depends_on:
+      - simulation
+      - database
+
+  simulation:
+    build: ./simulation
+    volumes:
+      - ./uploaded_files:/uploaded_files
+    depends_on:
+      - database
+
+  database:
     image: postgres:latest
     container_name: casino_simulation_db
     restart: always
