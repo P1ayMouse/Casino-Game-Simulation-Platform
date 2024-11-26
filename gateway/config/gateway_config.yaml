@@ -1,0 +1,6 @@
+gateway_port: 5000
+simulation_nodes:
+  - host: simulation_node_1
+    port: 5001
+  - host: simulation_node_2
+    port: 5001

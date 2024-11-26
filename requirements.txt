@@ -1,3 +1,4 @@
-requests==2.32.3
-flask==3.1.0
-psycopg2==2.9.10
+flask==2.3.3
+psycopg2-binary==2.9.10
+requests==2.31.0
+pyyaml==6.0

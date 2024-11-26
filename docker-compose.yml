@@ -2,19 +2,38 @@ version: '3.9'
 
 services:
   gateway:
-    build: ./gateway
+    build:
+      context: .
+      dockerfile: ./gateway/Dockerfile
     ports:
-      - "5001:5000"
+      - "5000:5000"
     volumes:
-      - ./uploaded_files:/uploaded_files
+      - ./logs:/app/logs
     depends_on:
-      - simulation
+      - simulation_node_1
+      - simulation_node_2
+
+  simulation_node_1:
+    build:
+      context: .
+      dockerfile: ./simulation/Dockerfile
+    environment:
+      SERVER_INSTANCE_ID: simulation_node_1
+    volumes:
+      - ./logs:/app/logs
+      - ./game-servers:/app/game-servers
+    depends_on:
       - database
 
-  simulation:
-    build: ./simulation
+  simulation_node_2:
+    build:
+      context: .
+      dockerfile: ./simulation/Dockerfile
+    environment:
+      SERVER_INSTANCE_ID: simulation_node_2
     volumes:
-      - ./uploaded_files:/uploaded_files
+      - ./logs:/app/logs
+      - ./game-servers:/app/game-servers
     depends_on:
       - database
 
