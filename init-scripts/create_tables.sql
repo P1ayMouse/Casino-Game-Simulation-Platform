@@ -1,15 +1,15 @@
--- Таблиця для збереження результатів окремих обертань
-CREATE TABLE IF NOT EXISTS spin_results (
+CREATE TABLE simulation_info (
     id SERIAL PRIMARY KEY,
-    timestamp TIMESTAMP DEFAULT NOW(),
-    win_amount NUMERIC NOT NULL,
-    server_instance_id VARCHAR(50)
+    instance_id VARCHAR(255),
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    duration_seconds DOUBLE PRECISION,
+    num_spins INTEGER
 );
 
--- Таблиця для збереження зведеної статистики
-CREATE TABLE IF NOT EXISTS summary_statistics (
+CREATE TABLE spin_results (
     id SERIAL PRIMARY KEY,
-    total_spins BIGINT DEFAULT 0,
-    total_wins NUMERIC DEFAULT 0,
-    average_win_per_spin NUMERIC DEFAULT 0
+    timestamp TIMESTAMP,
+    win_amount DECIMAL,
+    server_instance_id VARCHAR(255)
 );

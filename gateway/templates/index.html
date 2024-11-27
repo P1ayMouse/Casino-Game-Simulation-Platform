@@ -30,7 +30,7 @@
             <input type="submit" value="Запустити симуляцію">
         </form>
 
-        <div id="results-container" style="display: none;">
+        <div id="results-container" style="display: {% if results %}block{% else %}none{% endif %};">
             <div class="results">
                 <h2>Результати симуляції</h2>
                 <table>
@@ -38,11 +38,15 @@
                         <th>Загальна кількість спінів</th>
                         <th>Загальний виграш</th>
                         <th>Середній виграш на спін</th>
+                        <th>RTP (%)</th>
+                        <th>Тривалість симуляції (сек)</th>
                     </tr>
                     <tr>
-                        <td id="total-spins"></td>
-                        <td id="total-wins"></td>
-                        <td id="average-win"></td>
+                        <td id="total-spins">{{ results.total_spins }}</td>
+                        <td id="total-wins">{{ results.total_wins }}</td>
+                        <td id="average-win">{{ results.average_win_per_spin }}</td>
+                        <td id="rtp">{{ results.rtp }}</td>
+                        <td id="duration">{{ results.duration_seconds }}</td>
                     </tr>
                 </table>
             </div>
@@ -66,6 +70,8 @@
                         document.getElementById('total-spins').innerText = data.results.total_spins;
                         document.getElementById('total-wins').innerText = data.results.total_wins;
                         document.getElementById('average-win').innerText = data.results.average_win_per_spin;
+                        document.getElementById('rtp').innerText = data.results.rtp;
+                        document.getElementById('duration').innerText = data.results.duration_seconds;
                     } else {
                         setTimeout(checkStatus, 2000);
                     }
