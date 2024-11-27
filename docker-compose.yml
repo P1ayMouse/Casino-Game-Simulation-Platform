@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: ./gateway/Dockerfile
-    ports:
-      - "5000:5000"
+    expose:
+      - "8000"
     volumes:
       - ./logs:/app/logs
       - /var/run/docker.sock:/var/run/docker.sock
