@@ -59,7 +59,6 @@ def index():
         return render_template('index.html', results=simulation_results, message=message)
 
 
-
 def start_simulation_request(num_spins, stake, num_nodes):
     logging.info(f"Received simulation request: num_spins={num_spins}, stake={stake}, num_nodes={num_nodes}")
 
