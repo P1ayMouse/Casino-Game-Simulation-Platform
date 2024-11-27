@@ -14,7 +14,6 @@ from datetime import datetime
 with open('config/simulation_config.yaml', 'r') as config_file:
     config = yaml.safe_load(config_file)
 
-# Налаштування логування
 logging.basicConfig(
     filename='logs/simulation.log',
     level=logging.INFO,
@@ -40,13 +39,13 @@ def run_game_server(stake):
 def simulate_spins(num_spins, stake, batch_size=10000):
     server_instance_id = os.getenv('SERVER_INSTANCE_ID', 'simulation_node')
 
-    # Записуємо час початку симуляції
+    # Час початку симуляції
     simulation_start_time = time.perf_counter()
     start_timestamp = datetime.now()
     logging.info(f"Simulation start time: {start_timestamp}")
 
     results = []
-    # Виконуємо спіни паралельно
+    # Паралельні спіни
     with Pool(cpu_count()) as pool:
         spin_results = pool.imap_unordered(run_game_server, [stake] * num_spins)
         for idx, res in enumerate(spin_results, 1):
@@ -55,23 +54,22 @@ def simulate_spins(num_spins, stake, batch_size=10000):
                 results.append((datetime.now(), win_amount, server_instance_id))
             else:
                 logging.error("Invalid result from game server")
-            # Якщо набрали пакет або завершили всі спіни
+
             if idx % batch_size == 0 or idx == num_spins:
                 insert_many_into_db(results)
                 results.clear()
-    # Записуємо час закінчення симуляції
+
     simulation_end_time = time.perf_counter()
     end_timestamp = datetime.now()
     logging.info(f"Simulation end time: {end_timestamp}")
 
-    # Розраховуємо тривалість симуляції
+    # Розрахунок тривалості симуляції
     simulation_duration = simulation_end_time - simulation_start_time
     logging.info(f"Calculated simulation duration: {simulation_duration} seconds")
 
-    # Додаткове виведення в консоль
     print(f"Simulation duration: {simulation_duration} seconds")
 
-    # Зберігаємо інформацію про симуляцію
+    # Збереження інформації про симуляцію
     insert_simulation_info(server_instance_id, start_timestamp, end_timestamp, simulation_duration, num_spins)
 
 

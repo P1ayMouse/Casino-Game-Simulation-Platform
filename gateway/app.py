@@ -1,9 +1,7 @@
 import os
-import sys
 import yaml
 import logging
-from flask import Flask, request, jsonify, render_template, redirect, url_for
-import requests
+from flask import Flask, request, jsonify, render_template
 import docker
 import threading
 import psycopg2
@@ -21,13 +19,10 @@ logging.basicConfig(
 
 app = Flask(__name__)
 
-# Ініціалізація Docker клієнта
 docker_client = docker.from_env()
 
-# Параметри бази даних
 DATABASE_CONFIG = config['database']
 
-# Глобальна змінна для збереження результатів
 simulation_results = {}
 
 simulation_in_progress = False
@@ -44,14 +39,12 @@ def index():
         stake = float(request.form.get('stake', 1.0))
         num_nodes = int(request.form.get('num_nodes', 2))
 
-        # Запускаємо симуляцію
+        # Запуск симуляції
         response = start_simulation_request(num_spins, stake, num_nodes)
         message = response.get('status')
 
-        # Встановлюємо статус симуляції в True
         simulation_in_progress = True
 
-        # Рендеримо шаблон з message та results
         return render_template('index.html', message=message, results=simulation_results)
     else:
         message = None
@@ -92,7 +85,7 @@ def start_simulation_request(num_spins, stake, num_nodes):
 
         # Створення контейнера
         container = docker_client.containers.run(
-            image='casino-game-simulation-platform_simulation_node',  # Ім'я образу Simulation Node
+            image='casino-game-simulation-platform_simulation_node',
             name=node_name,
             environment={
                 'SERVER_INSTANCE_ID': node_name,
@@ -100,7 +93,7 @@ def start_simulation_request(num_spins, stake, num_nodes):
                 'STAKE': str(stake)
             },
             detach=True,
-            network='casino-game-simulation-platform_default',  # Мережа Docker Compose
+            network='casino-game-simulation-platform_default',
             volumes={
                 '/var/run/docker.sock': {'bind': '/var/run/docker.sock', 'mode': 'rw'},
                 os.path.abspath('./logs'): {'bind': '/app/logs', 'mode': 'rw'}
@@ -120,15 +113,13 @@ def start_simulation_request(num_spins, stake, num_nodes):
 def monitor_containers(containers):
     global simulation_in_progress
     for container in containers:
-        container.wait()  # Очікуємо завершення контейнера
+        container.wait()
         logging.info(f"Container {container.name} has exited.")
-        container.remove()  # Видаляємо контейнер
+        container.remove()
         logging.info(f"Container {container.name} has been removed.")
 
-    # Після завершення всіх контейнерів оновлюємо результати
     update_simulation_results()
 
-    # Встановлюємо статус симуляції в False
     simulation_in_progress = False
 
 
@@ -137,7 +128,8 @@ def update_simulation_results():
     try:
         conn = psycopg2.connect(**DATABASE_CONFIG)
         cur = conn.cursor()
-        # Отримуємо результати спінів
+
+        # Результати спінів
         cur.execute("""
             SELECT COUNT(*) AS total_spins,
                    SUM(win_amount) AS total_wins,
@@ -146,7 +138,7 @@ def update_simulation_results():
         """)
         result = cur.fetchone()
 
-        # Отримуємо інформацію про симуляцію
+        # Інформація про симуляцію
         cur.execute("""
             SELECT duration_seconds
             FROM simulation_info
@@ -169,7 +161,7 @@ def update_simulation_results():
         # Розрахунок RTP
         rtp = (total_wins / total_stake) * 100 if total_stake > 0 else 0.0
 
-        # Отримуємо тривалість симуляції
+        # Тривалість симуляції
         simulation_duration = simulation_info[0] if simulation_info else 0.0
 
         simulation_results = {

@@ -9,5 +9,5 @@ RUN mkdir -p /app/logs
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Використовуємо Gunicorn для запуску додатку
+# Gunicorn для запуску додатку
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
