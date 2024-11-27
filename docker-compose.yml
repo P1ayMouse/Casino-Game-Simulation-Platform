@@ -19,6 +19,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./gateway/static:/static
     depends_on:
       - gateway
 
@@ -38,3 +39,4 @@ services:
 
 volumes:
   casino_db_data:
+  static-files:

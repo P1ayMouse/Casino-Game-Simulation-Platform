@@ -197,7 +197,3 @@ def check_status():
         'status': status,
         'results': simulation_results
     })
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=config['gateway_port'])
