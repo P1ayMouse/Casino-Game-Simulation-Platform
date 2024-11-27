@@ -9,31 +9,7 @@ services:
       - "5000:5000"
     volumes:
       - ./logs:/app/logs
-    depends_on:
-      - simulation_node_1
-      - simulation_node_2
-
-  simulation_node_1:
-    build:
-      context: .
-      dockerfile: ./simulation/Dockerfile
-    environment:
-      SERVER_INSTANCE_ID: simulation_node_1
-    volumes:
-      - ./logs:/app/logs
-      - ./game-servers:/app/game-servers
-    depends_on:
-      - database
-
-  simulation_node_2:
-    build:
-      context: .
-      dockerfile: ./simulation/Dockerfile
-    environment:
-      SERVER_INSTANCE_ID: simulation_node_2
-    volumes:
-      - ./logs:/app/logs
-      - ./game-servers:/app/game-servers
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - database
 

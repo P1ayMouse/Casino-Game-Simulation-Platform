@@ -1,6 +1,8 @@
 gateway_port: 5000
-simulation_nodes:
-  - host: simulation_node_1
-    port: 5001
-  - host: simulation_node_2
-    port: 5001
+simulation_port: 5001
+database:
+  dbname: casino_db
+  user: casino_user
+  password: casino_pass
+  host: database
+  port: 5432

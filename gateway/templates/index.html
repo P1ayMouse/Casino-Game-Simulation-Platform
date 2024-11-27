@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Casino Game Simulation Platform</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Платформа симуляції казино</h1>
+    </header>
+
+    <div class="container">
+        {% if message %}
+            <div class="message">
+                <p><strong>{{ message }}</strong></p>
+            </div>
+        {% endif %}
+
+        <form method="post" id="simulation-form">
+            <label for="num_spins">Кількість спінів:</label>
+            <input type="number" id="num_spins" name="num_spins" value="1000" min="1" required>
+
+            <label for="stake">Розмір ставки:</label>
+            <input type="number" id="stake" name="stake" value="1.0" min="0.01" step="0.01" required>
+
+            <label for="num_nodes">Кількість вузлів:</label>
+            <input type="number" id="num_nodes" name="num_nodes" value="2" min="1" required>
+
+            <input type="submit" value="Запустити симуляцію">
+        </form>
+
+        <div id="results-container" style="display: none;">
+            <div class="results">
+                <h2>Результати симуляції</h2>
+                <table>
+                    <tr>
+                        <th>Загальна кількість спінів</th>
+                        <th>Загальний виграш</th>
+                        <th>Середній виграш на спін</th>
+                    </tr>
+                    <tr>
+                        <td id="total-spins"></td>
+                        <td id="total-wins"></td>
+                        <td id="average-win"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let simulationInProgress = {{ 'true' if message else 'false' }};
+
+        if (simulationInProgress) {
+            checkStatus();
+        }
+
+        function checkStatus() {
+            fetch('/check_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        simulationInProgress = false;
+                        document.getElementById('results-container').style.display = 'block';
+                        document.getElementById('total-spins').innerText = data.results.total_spins;
+                        document.getElementById('total-wins').innerText = data.results.total_wins;
+                        document.getElementById('average-win').innerText = data.results.average_win_per_spin;
+                    } else {
+                        setTimeout(checkStatus, 2000);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>

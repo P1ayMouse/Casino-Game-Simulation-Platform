@@ -6,7 +6,6 @@ import json
 import logging
 import yaml
 from multiprocessing import Pool, cpu_count
-from flask import Flask, request, jsonify
 from datetime import datetime
 
 # Завантаження конфігурації
@@ -21,8 +20,6 @@ logging.basicConfig(
 )
 
 DATABASE_CONFIG = config['database']
-
-app = Flask(__name__)
 
 def run_game_server(stake):
     try:
@@ -62,15 +59,9 @@ def simulate_spins(num_spins, stake):
         else:
             logging.error("Invalid result from game server")
 
-@app.route('/run_simulation', methods=['POST'])
-def run_simulation():
-    data = request.get_json()
-    num_spins = data.get('num_spins', 1000)
-    stake = data.get('stake', 1.0)
-
+if __name__ == '__main__':
+    num_spins = int(os.getenv('NUM_SPINS', '1000'))
+    stake = float(os.getenv('STAKE', '1.0'))
     logging.info(f"Starting simulation with {num_spins} spins at stake {stake}")
     simulate_spins(num_spins, stake)
-    return jsonify({"status": "Simulation complete"}), 200
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=config['simulation_port'])
+    logging.info("Simulation complete. Exiting.")
