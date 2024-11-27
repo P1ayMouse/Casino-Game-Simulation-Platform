@@ -1,5 +1,8 @@
 FROM python:3.9-slim
 
+# Встановлюємо Docker CLI
+RUN apt-get update && apt-get install -y docker.io
+
 WORKDIR /app
 
 COPY gateway/app.py /app/

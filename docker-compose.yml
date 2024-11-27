@@ -12,6 +12,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - database
+      - simulation_node
 
   nginx:
     image: nginx:latest
@@ -21,6 +22,14 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - gateway
+
+  simulation_node:
+    build:
+      context: .
+      dockerfile: ./simulation/Dockerfile
+    command: ["echo", "Simulation Node image built."]
+    deploy:
+      replicas: 0
 
   database:
     image: postgres:latest
