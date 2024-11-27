@@ -1,6 +1,0 @@
-database:
-  dbname: casino_db
-  user: casino_user
-  password: casino_pass
-  host: database
-  port: 5432
