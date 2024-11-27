@@ -2,9 +2,11 @@ import os
 import sys
 import subprocess
 import psycopg2
+import psycopg2.extras
 import json
 import logging
 import yaml
+import time
 from multiprocessing import Pool, cpu_count
 from datetime import datetime
 
@@ -21,6 +23,7 @@ logging.basicConfig(
 
 DATABASE_CONFIG = config['database']
 
+
 def run_game_server(stake):
     try:
         result = subprocess.run(['python', 'game-servers/game-server.py', str(stake)], capture_output=True, text=True)
@@ -33,31 +36,81 @@ def run_game_server(stake):
         logging.exception("Error running game server")
         return None
 
-def insert_into_db(win_amount, server_instance_id):
+
+def simulate_spins(num_spins, stake, batch_size=10000):
+    server_instance_id = os.getenv('SERVER_INSTANCE_ID', 'simulation_node')
+
+    # Записуємо час початку симуляції
+    simulation_start_time = time.perf_counter()
+    start_timestamp = datetime.now()
+    logging.info(f"Simulation start time: {start_timestamp}")
+
+    results = []
+    # Виконуємо спіни паралельно
+    with Pool(cpu_count()) as pool:
+        spin_results = pool.imap_unordered(run_game_server, [stake] * num_spins)
+        for idx, res in enumerate(spin_results, 1):
+            if res and 'win_amount' in res:
+                win_amount = res['win_amount']
+                results.append((datetime.now(), win_amount, server_instance_id))
+            else:
+                logging.error("Invalid result from game server")
+            # Якщо набрали пакет або завершили всі спіни
+            if idx % batch_size == 0 or idx == num_spins:
+                insert_many_into_db(results)
+                results.clear()
+    # Записуємо час закінчення симуляції
+    simulation_end_time = time.perf_counter()
+    end_timestamp = datetime.now()
+    logging.info(f"Simulation end time: {end_timestamp}")
+
+    # Розраховуємо тривалість симуляції
+    simulation_duration = simulation_end_time - simulation_start_time
+    logging.info(f"Calculated simulation duration: {simulation_duration} seconds")
+
+    # Додаткове виведення в консоль
+    print(f"Simulation duration: {simulation_duration} seconds")
+
+    # Зберігаємо інформацію про симуляцію
+    insert_simulation_info(server_instance_id, start_timestamp, end_timestamp, simulation_duration, num_spins)
+
+
+def insert_many_into_db(data):
     try:
         conn = psycopg2.connect(**DATABASE_CONFIG)
         cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO spin_results (timestamp, win_amount, server_instance_id) VALUES (%s, %s, %s);",
-            (datetime.now(), win_amount, server_instance_id)
+        psycopg2.extras.execute_values(
+            cur,
+            "INSERT INTO spin_results (timestamp, win_amount, server_instance_id) VALUES %s",
+            data
         )
         conn.commit()
         cur.close()
         conn.close()
+        logging.info(f"Inserted {len(data)} records into DB")
     except Exception as e:
-        logging.exception("Database error")
+        logging.exception("Database error during batch insert")
 
-def simulate_spins(num_spins, stake):
-    server_instance_id = os.getenv('SERVER_INSTANCE_ID', 'simulation_node')
-    with Pool(cpu_count()) as pool:
-        results = pool.map(run_game_server, [stake]*num_spins)
-    for res in results:
-        if res and 'win_amount' in res:
-            win_amount = res['win_amount']
-            insert_into_db(win_amount, server_instance_id)
-            logging.info(f"Inserted win amount {win_amount} into DB")
-        else:
-            logging.error("Invalid result from game server")
+
+def insert_simulation_info(instance_id, start_time, end_time, duration, num_spins):
+    try:
+        conn = psycopg2.connect(**DATABASE_CONFIG)
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO simulation_info (instance_id, start_time, end_time, duration_seconds, num_spins)
+            VALUES (%s, %s, %s, %s, %s);
+            """,
+            (instance_id, start_time, end_time, duration, num_spins)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        logging.info(f"Inserted simulation info for {instance_id} into DB")
+    except Exception as e:
+        logging.exception("Database error during inserting simulation info")
+        print(f"Exception occurred during insert_simulation_info: {e}")
+
 
 if __name__ == '__main__':
     num_spins = int(os.getenv('NUM_SPINS', '1000'))

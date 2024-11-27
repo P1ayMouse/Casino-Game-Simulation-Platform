@@ -27,13 +27,13 @@ docker_client = docker.from_env()
 # Параметри бази даних
 DATABASE_CONFIG = config['database']
 
-# Порт Simulation Nodes
-SIMULATION_PORT = config.get('simulation_port', 5001)
-
 # Глобальна змінна для збереження результатів
 simulation_results = {}
 
 simulation_in_progress = False
+
+last_num_spins = 0
+last_stake = 0.0
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -51,7 +51,8 @@ def index():
         # Встановлюємо статус симуляції в True
         simulation_in_progress = True
 
-        return render_template('index.html', message=message)
+        # Рендеримо шаблон з message та results
+        return render_template('index.html', message=message, results=simulation_results)
     else:
         message = None
         if simulation_in_progress:
@@ -59,8 +60,21 @@ def index():
         return render_template('index.html', results=simulation_results, message=message)
 
 
-
 def start_simulation_request(num_spins, stake, num_nodes):
+    global last_num_spins, last_stake
+
+    try:
+        conn = psycopg2.connect(**DATABASE_CONFIG)
+        cur = conn.cursor()
+        cur.execute("TRUNCATE TABLE spin_results;")
+        cur.execute("TRUNCATE TABLE simulation_info;")
+        conn.commit()
+        cur.close()
+        conn.close()
+        logging.info("Tables spin_results and simulation_info truncated.")
+    except Exception as e:
+        logging.exception("Error truncating tables")
+
     logging.info(f"Received simulation request: num_spins={num_spins}, stake={stake}, num_nodes={num_nodes}")
 
     # Розрахунок кількості спінів для кожного вузла
@@ -97,6 +111,9 @@ def start_simulation_request(num_spins, stake, num_nodes):
     # Моніторинг контейнерів
     threading.Thread(target=monitor_containers, args=(simulation_nodes,)).start()
 
+    last_num_spins = num_spins
+    last_stake = stake
+
     return {"status": "Симуляція запущена. Результати з'являться після завершення."}
 
 
@@ -116,10 +133,11 @@ def monitor_containers(containers):
 
 
 def update_simulation_results():
-    global simulation_results
+    global simulation_results, last_num_spins, last_stake
     try:
         conn = psycopg2.connect(**DATABASE_CONFIG)
         cur = conn.cursor()
+        # Отримуємо результати спінів
         cur.execute("""
             SELECT COUNT(*) AS total_spins,
                    SUM(win_amount) AS total_wins,
@@ -127,14 +145,39 @@ def update_simulation_results():
             FROM spin_results;
         """)
         result = cur.fetchone()
+
+        # Отримуємо інформацію про симуляцію
+        cur.execute("""
+            SELECT duration_seconds
+            FROM simulation_info
+            ORDER BY id DESC
+            LIMIT 1;
+        """)
+        simulation_info = cur.fetchone()
+
         conn.commit()
         cur.close()
         conn.close()
 
+        total_spins = result[0]
+        total_wins = float(result[1]) if result[1] else 0.0
+        average_win = float(result[2]) if result[2] else 0.0
+
+        # Розрахунок загальної ставки
+        total_stake = last_num_spins * last_stake
+
+        # Розрахунок RTP
+        rtp = (total_wins / total_stake) * 100 if total_stake > 0 else 0.0
+
+        # Отримуємо тривалість симуляції
+        simulation_duration = simulation_info[0] if simulation_info else 0.0
+
         simulation_results = {
-            'total_spins': result[0],
-            'total_wins': round(result[1], 2) if result[1] else 0.0,
-            'average_win_per_spin': round(result[2], 4) if result[2] else 0.0
+            'total_spins': total_spins,
+            'total_wins': round(total_wins, 2),
+            'average_win_per_spin': round(average_win, 4),
+            'rtp': round(rtp, 2),
+            'duration_seconds': round(simulation_duration, 2)
         }
 
         logging.info(f"Simulation results updated: {simulation_results}")
