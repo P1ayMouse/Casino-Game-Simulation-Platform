@@ -75,10 +75,6 @@ form input[type="submit"] {
     cursor: pointer;
 }
 
-form input[type="submit"]:hover {
-    background: #e8491d;
-}
-
 .message {
     background: #e8491d;
     color: #ffffff;
@@ -114,4 +110,14 @@ form input[type="submit"]:hover {
     text-align: center;
     padding: 20px;
     margin-top: 30px;
+}
+
+.disabled-button {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.enabled-button {
+    background: #35424a;
+    cursor: pointer;
 }

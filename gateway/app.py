@@ -1,4 +1,6 @@
 import os
+import time
+
 import yaml
 import logging
 from flask import Flask, request, jsonify, render_template
@@ -179,12 +181,11 @@ def update_simulation_results():
 
 @app.route('/check_status')
 def check_status():
-    global simulation_results, simulation_in_progress
+    global simulation_in_progress, simulation_results
     if simulation_in_progress:
         status = 'in_progress'
     else:
-        status = 'completed'
-
+        status = 'completed' if simulation_results else 'not_started'
     return jsonify({
         'status': status,
         'results': simulation_results

@@ -12,7 +12,7 @@
 
     <div class="container">
         {% if message %}
-            <div class="message">
+            <div class="message" id="simulation-message">
                 <p><strong>{{ message }}</strong></p>
             </div>
         {% endif %}
@@ -27,10 +27,10 @@
             <label for="num_nodes">Кількість вузлів:</label>
             <input type="number" id="num_nodes" name="num_nodes" value="2" min="1" required>
 
-            <input type="submit" value="Запустити симуляцію">
+            <input type="submit" id="start-button" class="enabled-button" value="Запустити симуляцію">
         </form>
 
-        <div id="results-container" style="display: {% if results %}block{% else %}none{% endif %};">
+        <div id="results-container" {% if not results %}style="display: none;"{% endif %}>
             <div class="results">
                 <h2>Результати симуляції</h2>
                 <table>
@@ -57,7 +57,34 @@
         let simulationInProgress = {{ 'true' if message else 'false' }};
 
         if (simulationInProgress) {
+            disableButton();
             checkStatus();
+        }
+
+        document.getElementById('simulation-form').addEventListener('submit', function(event) {
+            disableButton();
+        });
+
+        function hideMessage() {
+            const messageDiv = document.getElementById('simulation-message');
+            if (messageDiv) {
+                messageDiv.style.display = 'none';
+            }
+        }
+
+
+        function disableButton() {
+            const submitButton = document.getElementById('start-button');
+            submitButton.disabled = true;
+            submitButton.classList.remove('enabled-button');
+            submitButton.classList.add('disabled-button');
+        }
+
+        function enableButton() {
+            const submitButton = document.getElementById('start-button');
+            submitButton.disabled = false;
+            submitButton.classList.remove('disabled-button');
+            submitButton.classList.add('enabled-button');
         }
 
         function checkStatus() {
@@ -72,6 +99,8 @@
                         document.getElementById('average-win').innerText = data.results.average_win_per_spin;
                         document.getElementById('rtp').innerText = data.results.rtp;
                         document.getElementById('duration').innerText = data.results.duration_seconds;
+                        enableButton();
+                        hideMessage();
                     } else {
                         setTimeout(checkStatus, 2000);
                     }
